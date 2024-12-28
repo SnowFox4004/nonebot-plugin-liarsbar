@@ -270,6 +270,10 @@ class Game:
                         )
                         continue
 
+                    if await self.check_last_player_with_card(cur):
+                        await self.shoot_player(cur, "其他存活玩家手中的牌都已出完")
+                        break
+
                     if not self.small_round:
                         continue
 
@@ -293,6 +297,18 @@ class Game:
         await UniMessage().text(f"{self.get_alive()[0].name} 赢了！").send(
             self.room.target, self.bot
         )
+
+    async def check_last_player_with_card(self, cur):
+        zero_cards = 0
+
+        for player in self.get_alive():
+            if player == cur:
+                continue
+            else:
+                if len(player.card) == 0:
+                    zero_cards += 1
+
+        return zero_cards == len(self.get_alive()) - 1
 
     async def get_player_fp(self, cur: Player, action: str):
         target_cards = map(int, action.split(" ")[1:])
@@ -346,7 +362,7 @@ class Game:
 
                 return -1
                 # continue
-            self.small_round = False  # 成不成功都有人要开枪，即需要重发牌
+
             # dbg_msg = (
             #     UniMessage()
             #     .text(
@@ -386,11 +402,13 @@ class Game:
         )
         await msg.send(self.room.target, self.bot)
 
-    async def shoot_player(self, player: Player):
+    async def shoot_player(self, player: Player, reason: str = "质疑上家失败"):
+        self.small_round = False  # 开枪，即需要重发牌
+
         cur_bullet = player.gun.pop()
-        await UniMessage().text(f"{player.name or player.uid} 需要开一次枪...").send(
-            self.room.target, self.bot
-        )
+        await UniMessage().text(
+            f"由于 {reason}, {player.name or player.uid} 需要开一次枪..."
+        ).send(self.room.target, self.bot)
         await asyncio.sleep(3)
 
         if cur_bullet == 1:
