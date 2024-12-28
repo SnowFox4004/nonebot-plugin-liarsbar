@@ -13,10 +13,10 @@ _✨ NoneBot 插件简单描述 ✨_
 
 <a href="./LICENSE">
     <img src="https://img.shields.io/github/license/SnowFox4004/nonebot-plugin-liarsbar.svg" alt="license">
-</a>
+</a> 
 <a href="https://pypi.python.org/pypi/nonebot-plugin-liarsbar">
     <img src="https://img.shields.io/pypi/v/nonebot-plugin-liarsbar.svg" alt="pypi">
-</a>
+</a> 
 <img src="https://img.shields.io/badge/python-3.9+-blue.svg" alt="python">
 
 </div>
