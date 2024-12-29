@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-liarsbar"
-version = "1.0.1"
+version = "1.0.2"
 description = "用于 Nonebot2 的 liar's bar 插件"
 authors = [{ name = "SnowFox4004", email = "snow_fox08@163.com" }]
 dependencies = [
