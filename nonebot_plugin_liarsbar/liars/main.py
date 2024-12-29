@@ -217,7 +217,7 @@ async def start_game_handler(bot: Bot, event: Event, session: Uninfo):
     await asyncio.sleep(1)
 
     game = defs.Game(target_room, bot)
-    await game.start(CONFIG.num_bullet)
+    await game.start(CONFIG.liars_num_bullet)
 
     target_room.attendable = True
     del game

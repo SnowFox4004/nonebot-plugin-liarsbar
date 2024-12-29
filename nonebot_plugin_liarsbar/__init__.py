@@ -7,7 +7,7 @@ require("nonebot_plugin_uninfo")
 from . import liars as liars
 from .config import Config, config
 
-__version__ = config.version
+__version__ = "1.0.3"
 __plugin_meta__ = PluginMetadata(
     name="Liar's Bar",
     usage="/createroon /startgame /fp <card> /zy /help",
