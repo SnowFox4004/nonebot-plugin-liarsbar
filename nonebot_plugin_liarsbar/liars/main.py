@@ -1,20 +1,19 @@
-import nonebot_plugin_waiter as waiter
-
-import nonebot
-from nonebot.adapters import Bot, Event, Message
-from nonebot.rule import to_me
-from nonebot import logger
-import nonebot_plugin_alconna.uniseg as uniseg
-from nonebot_plugin_alconna import Alconna, Args, Command, Option, on_alconna, Match
-from arclet.alconna import MultiVar
-
-from nonebot_plugin_uninfo import UniSession, Uninfo
-from nonebot_plugin_alconna.uniseg import MsgTarget
 import asyncio
+
+import nonebot_plugin_alconna.uniseg as uniseg
+from arclet.alconna import MultiVar
+from nonebot import get_plugin_config, logger
+from nonebot.adapters import Bot, Event
+from nonebot_plugin_alconna import Alconna, Args, Match, on_alconna
+from nonebot_plugin_alconna.uniseg import MsgTarget
+from nonebot_plugin_uninfo import Uninfo
+
+from ..config import Config
 from . import definitions as defs
 
 ROOMS: dict[str, defs.Room] = {}
 PLAYERS: dict[str, defs.Player] = {}
+CONFIG = get_plugin_config(Config)
 
 create_room = on_alconna(
     Alconna(
@@ -218,7 +217,7 @@ async def start_game_handler(bot: Bot, event: Event, session: Uninfo):
     await asyncio.sleep(1)
 
     game = defs.Game(target_room, bot)
-    await game.start()
+    await game.start(CONFIG.num_bullet)
 
     target_room.attendable = True
     del game

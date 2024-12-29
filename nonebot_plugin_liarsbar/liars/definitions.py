@@ -47,7 +47,7 @@ class _InputStore:
 
     async def wait_input(self, gid, uid) -> UniMessage | str:
         key = gid + "_" + uid
-        logger.info(f"start waiting for {key}")
+        # logger.info(f"start waiting for {key}")
 
         if self.input_store[key].is_set():
             del self.input_store[key]
@@ -211,7 +211,7 @@ class Game:
         for player in self.room.players:
             player.gun = [0] * (6 - num_real) + [1] * num_real
             rnd.shuffle(player.gun)
-            logger.info(f"player {player.name}'s gun is like {player.gun}")
+            # logger.info(f"player {player.name}'s gun is like {player.gun}")
 
     async def start(self, num_real_bullet: int = 1):
         self.cur_player_idx = 0
@@ -226,7 +226,7 @@ class Game:
             game_round += 1
 
             self.cards, cur_need = Game.generate_cards()
-            logger.debug(self.cards)
+            # logger.debug(self.cards)
             rnd.shuffle(self.cards)
 
             tasks: list[asyncio.Task] = []
@@ -264,7 +264,6 @@ class Game:
                     alive_players = self.get_alive()
                     cur = alive_players[self.cur_player_idx]
                     if len(cur.card) == 0:
-
                         self.cur_player_idx = (self.cur_player_idx + 1) % len(
                             alive_players
                         )
@@ -394,7 +393,7 @@ class Game:
             )
 
     async def acknowledge_action(self, cur: Player):
-        logger.debug(f"{cur.name} 开始操作")
+        # logger.debug(f"{cur.name} 开始操作")
         msg = (
             UniMessage()
             .at(cur.uid)

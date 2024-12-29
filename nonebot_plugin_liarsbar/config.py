@@ -1,5 +1,5 @@
+from nonebot import get_plugin_config, logger
 from pydantic import BaseModel
-from nonebot import logger, get_plugin_config
 
 
 class Config(BaseModel):
@@ -8,7 +8,7 @@ class Config(BaseModel):
     """
 
     version: str = "1.0.0"
-    description: str = "Nonebot plugin for playing Liar's Bar"
+    num_bullet: int = 1  # 每玩家枪内子弹数
 
 
 config = get_plugin_config(Config)
