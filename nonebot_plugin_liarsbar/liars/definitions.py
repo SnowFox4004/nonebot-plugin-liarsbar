@@ -296,8 +296,8 @@ class Game:
                         await self.shoot_player(cur, "其他存活玩家手中的牌都已出完")
                         break
 
-                    if len(cur.card) == 0:
-                        continue
+                    # if len(cur.card) == 0:
+                    #     continue
 
                     # self.current_player = cur
                     await self.acknowledge_action(cur)
