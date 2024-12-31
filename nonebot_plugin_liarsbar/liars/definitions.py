@@ -280,7 +280,7 @@ class Game:
             self.small_round = True
             while self.small_round:
                 for _ in range(len(self.get_alive())):
-
+                    await asyncio.sleep(0.5)
                     alive_players = self.get_alive()
                     cur = alive_players[self.cur_player_idx]
                     if len(cur.card) == 0:
@@ -293,7 +293,10 @@ class Game:
                         break
 
                     if await self.check_last_player_with_card(cur):
-                        await self.shoot_player(cur, "其他存活玩家手中的牌都已出完")
+                        await UniMessage(
+                            f"由于除 {cur.name}（当前玩家） 以外的玩家均已出完牌，自动触发当前玩家的质疑"
+                        ).send(self.room.target, self.bot)
+                        await self.doubt_player(cur, cur_need)
                         break
 
                     # if len(cur.card) == 0:
@@ -342,6 +345,39 @@ class Game:
 
         return cards_info
 
+    async def doubt_player(self, cur: Player, cur_need: str):
+        if len(self.last_cards) == 0 or self.last_player is None:
+            msg = UniMessage().text("❌ 上家没有出牌，无法质疑 请直接出牌")
+            await msg.send(self.room.target, self.bot)
+            await asyncio.sleep(0.5)
+
+            return -1
+
+        if not all(card == cur_need for card in self.last_cards):
+            broadcast_msg = UniMessage().text(
+                f"{cur.name} 质疑 {self.last_player.name} 成功！他出的牌为 {self.last_cards}"
+            )
+            shoot_target: Player = self.last_player
+            delta_player = -1
+            reason = "被质疑成功"
+        else:
+            broadcast_msg = UniMessage().text(
+                f"{cur.name} 质疑 {self.last_player.name} 失败！他出的牌为 {self.last_cards}"
+            )
+            shoot_target: Player = cur
+            delta_player = 0
+            reason = "质疑上家失败"
+
+        self.cur_player_idx = (self.cur_player_idx + delta_player) % len(
+            self.get_alive()
+        )
+
+        await broadcast_msg.send(self.room.target, self.bot)
+        await self.shoot_player(shoot_target, reason)
+
+        return 0
+        # return broadcast_msg, shoot_target, reason
+
     async def handle_player_action(
         self,
         cur: Player,
@@ -380,16 +416,15 @@ class Game:
 
             self.last_cards = cards_info
             self.last_player = cur
+
+            return 0
         else:
             # 质疑！
+            res = await self.doubt_player(cur, cur_need)
+            return res
+            # continue
 
-            if len(self.last_cards) == 0 or self.last_player is None:
-                msg = UniMessage().text("❌ 上家没有出牌，无法质疑 请直接出牌")
-                await msg.send(self.room.target, self.bot)
-                await asyncio.sleep(0.5)
-
-                return -1
-                # continue
+            # broadcast_msg, shoot_target, reason = await self.doubt_player(cur, cur_need)
 
             # dbg_msg = (
             #     UniMessage()
@@ -401,27 +436,6 @@ class Game:
             #     )
             # )
             # await cur.send(dbg_msg, self.bot)
-
-            if not all(card == cur_need for card in self.last_cards):
-                broadcast_msg = UniMessage().text(
-                    f"{cur.name} 质疑 {self.last_player.name} 成功！他出的牌为 {self.last_cards}"
-                )
-                shoot_target = self.last_player
-                delta_player = -1
-                reason = "被质疑成功"
-            else:
-                broadcast_msg = UniMessage().text(
-                    f"{cur.name} 质疑 {self.last_player.name} 失败！他出的牌为 {self.last_cards}"
-                )
-                shoot_target = cur
-                delta_player = 0
-                reason = "质疑上家失败"
-
-            await broadcast_msg.send(self.room.target, self.bot)
-            await self.shoot_player(shoot_target, reason)
-            self.cur_player_idx = (self.cur_player_idx + delta_player) % len(
-                self.get_alive()
-            )
 
     async def acknowledge_action(self, cur: Player):
         # logger.debug(f"{cur.name} 开始操作")

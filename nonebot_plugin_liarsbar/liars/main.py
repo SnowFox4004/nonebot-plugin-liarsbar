@@ -186,6 +186,11 @@ async def attend_room_handler(
     uid = session.user.id
     target_user = await load_user(uid, session.user.name)
 
+    if target_user.in_room is not None:
+        await attend_room.finish(
+            f"❌: 你已经在房间 {target_user.in_room.room_name} 中，不能再加入房间"
+        )
+
     targer_room: defs.Room = ROOMS[room.result]
     targer_room.on_add_player(target_user)
 
