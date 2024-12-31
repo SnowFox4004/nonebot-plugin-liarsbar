@@ -18,6 +18,7 @@ _✨ Liar's Bar 插件 ✨_
     <img src="https://img.shields.io/pypi/v/nonebot-plugin-liarsbar.svg" alt="pypi">
 </a> 
 <img src="https://img.shields.io/badge/python-3.9+-blue.svg" alt="python">
+<img src="https://img.shields.io/github/issues/SnowFox4004/nonebot-plugin-liarsbar" alt="issues">
 
 </div>
 

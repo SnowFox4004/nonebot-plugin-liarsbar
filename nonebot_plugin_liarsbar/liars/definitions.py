@@ -24,18 +24,21 @@ class LiarException(BaseException):
 
 class UserInputEvent:
     _event: anyio.Event
-    _msg: str | None | UniMessage
+    _msg: str
+    _info_dict: dict
 
     def __init__(self) -> None:
         self._event = anyio.Event()
 
-    def set(self, msg: str | UniMessage) -> None:
+    def set(self, msg: str, **kwargs) -> None:
         self._msg = msg
+        self._info_dict = kwargs
+
         self._event.set()
 
     async def wait(self):
         await self._event.wait()
-        return self._msg
+        return self._msg, self._info_dict
 
     def is_set(self):
         return self._event.is_set()
@@ -45,7 +48,7 @@ class _InputStore:
     def __init__(self):
         self.input_store = defaultdict(UserInputEvent)
 
-    async def wait_input(self, gid, uid) -> UniMessage | str:
+    async def wait_input(self, gid, uid):
         key = gid + "_" + uid
         # logger.info(f"start waiting for {key}")
 
@@ -161,10 +164,12 @@ class Room:
         if self.owener == player:
             self.owener = self.players[0]
 
-        return CallResult(
-            CallResultStatus.SUCCESS,
-            f"✔ {player} 退出房间, 房主更换为: {self.owener.name}",
-        )
+            return CallResult(
+                CallResultStatus.SUCCESS,
+                f"✔ {player} 退出房间, 房主更换为: {self.owener.name}",
+            )
+
+        return CallResult(CallResultStatus.SUCCESS, f"✔ {player} 退出房间")
 
     def on_get_players(self):
         return CallResult(
@@ -284,28 +289,31 @@ class Game:
                         )
                         continue
 
+                    if not self.small_round:
+                        break
+
                     if await self.check_last_player_with_card(cur):
                         await self.shoot_player(cur, "其他存活玩家手中的牌都已出完")
                         break
 
-                    if not self.small_round:
-                        continue
-
                     if len(cur.card) == 0:
                         continue
+
                     # self.current_player = cur
                     await self.acknowledge_action(cur)
 
-                    player_action: str = await input_store.wait_input(
+                    player_action, info_dict = await input_store.wait_input(
                         self.room.gid, cur.uid
                     )  # type: ignore
-                    res = await self.handle_player_action(cur, player_action, cur_need)
+                    res = await self.handle_player_action(
+                        cur, player_action, cur_need, info_dict
+                    )
                     while res == -1:
-                        player_action: str = await input_store.wait_input(
+                        player_action, info_dict = await input_store.wait_input(
                             self.room.gid, cur.uid
                         )  # type: ignore
                         res = await self.handle_player_action(
-                            cur, player_action, cur_need
+                            cur, player_action, cur_need, info_dict
                         )
 
         await UniMessage().text(f"{self.get_alive()[0].name} 赢了！").send(
@@ -326,8 +334,8 @@ class Game:
 
         return zero_cards == len(self.get_alive()) - 1
 
-    async def get_player_fp(self, cur: Player, action: str):
-        target_cards = map(int, action.split(" ")[1:])
+    async def get_player_fp(self, cur: Player, target_cards: list):
+        # target_cards = map(int, action.split(" ")[1:])
         cards_info = [cur.card[(i - 1) % len(cur.card)] for i in target_cards]
         for _ in cards_info:
             cur.card.remove(_)
@@ -339,12 +347,16 @@ class Game:
         cur: Player,
         player_action: str,
         cur_need: str,
+        info_dict: dict,
     ):
         if player_action.startswith("/fp"):
             # 玩家出牌
+            player_fp_index = info_dict.get("indexs")
+            assert player_fp_index is not None, "玩家输入错误"
+
             self.cur_player_idx = (self.cur_player_idx + 1) % len(self.get_alive())
 
-            cards_info = await self.get_player_fp(cur, player_action)
+            cards_info = await self.get_player_fp(cur, player_fp_index)
             cards_info = [card.replace("Joker", cur_need) for card in cards_info]
 
             dbg_msg = UniMessage().text("您出的牌是: \n\t")
@@ -396,15 +408,17 @@ class Game:
                 )
                 shoot_target = self.last_player
                 delta_player = -1
+                reason = "被质疑成功"
             else:
                 broadcast_msg = UniMessage().text(
                     f"{cur.name} 质疑 {self.last_player.name} 失败！他出的牌为 {self.last_cards}"
                 )
                 shoot_target = cur
                 delta_player = 0
+                reason = "质疑上家失败"
 
             await broadcast_msg.send(self.room.target, self.bot)
-            await self.shoot_player(shoot_target)
+            await self.shoot_player(shoot_target, reason)
             self.cur_player_idx = (self.cur_player_idx + delta_player) % len(
                 self.get_alive()
             )

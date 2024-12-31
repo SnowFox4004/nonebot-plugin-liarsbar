@@ -117,6 +117,7 @@ Liar's Bar:
 async def quit_room_handler(bot: Bot, event: Event, session: Uninfo):
     uid = session.user.id
     target_user = await load_user(uid)
+
     if target_user.in_game:
         await quit_room.finish("❌: 你正在游戏中，无法退出房间")
 
@@ -133,6 +134,9 @@ async def quit_room_handler(bot: Bot, event: Event, session: Uninfo):
         if res.status == defs.CallResultStatus.WARNING:
             resp_msg.text(f"\n⚠️: {res.msg}")
             ROOMS.pop(target_user.in_room.room_name)
+
+        elif res.status == defs.CallResultStatus.SUCCESS:
+            resp_msg.text(f"\n✔: {res.msg}")
 
         target_user.in_room = None
         await quit_room.finish(resp_msg)
@@ -159,8 +163,9 @@ async def zy_cmd_handler(bot: Bot, event: Event, session: Uninfo):
 
 
 @fp_cmd.handle()
-async def fp_cmd_handler(bot: Bot, event: Event, session: Uninfo):
+async def fp_cmd_handler(cards: Match[list], event: Event, session: Uninfo):
     uid = session.user.id
+    send_card_indexes = cards.result
     # target_user = await load_user(uid)
     # logger.info(f"{msg}")
 
@@ -169,7 +174,7 @@ async def fp_cmd_handler(bot: Bot, event: Event, session: Uninfo):
         return
 
     defs.input_store.input_store[f"{session.group.id}_{uid}"].set(
-        event.get_message().extract_plain_text()
+        "/fp", indexs=send_card_indexes
     )
     await fp_cmd.finish()
 
@@ -183,6 +188,8 @@ async def attend_room_handler(
 
     targer_room: defs.Room = ROOMS[room.result]
     targer_room.on_add_player(target_user)
+
+    target_user.in_room = targer_room
 
     await attend_room.send(
         uniseg.UniMessage(f"加入房间 {targer_room.room_name} 成功")
