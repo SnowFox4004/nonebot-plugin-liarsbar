@@ -69,6 +69,14 @@ help_cmd = on_alconna(
     priority=10,
 )
 
+quit_room = on_alconna(
+    Alconna("quitroom"),
+    # rule=to_me,
+    aliases={"退出房间", "退出"},
+    use_cmd_start=True,
+    priority=10,
+)
+
 
 async def load_user(uid: str, name: str | None = None) -> defs.Player:
     if uid in PLAYERS:
@@ -103,6 +111,31 @@ Liar's Bar:
     """
 
     return rule_explanation if target == "rule" else command_help
+
+
+@quit_room.handle()
+async def quit_room_handler(bot: Bot, event: Event, session: Uninfo):
+    uid = session.user.id
+    target_user = await load_user(uid)
+    if target_user.in_game:
+        await quit_room.finish("❌: 你正在游戏中，无法退出房间")
+
+    if target_user.in_room is None:
+        await quit_room.finish("❌: 你没有加入任何房间")
+
+    if target_user.in_room is not None:
+        res = target_user.in_room.on_remove_player(target_user)
+
+        resp_msg = uniseg.UniMessage(
+            f"退出房间 {target_user.in_room.room_name} 成功 "
+        ).at(event.get_user_id())
+
+        if res.status == defs.CallResultStatus.WARNING:
+            resp_msg.text(f"\n⚠️: {res.msg}")
+            ROOMS.pop(target_user.in_room.room_name)
+
+        target_user.in_room = None
+        await quit_room.finish(resp_msg)
 
 
 @help_cmd.handle()

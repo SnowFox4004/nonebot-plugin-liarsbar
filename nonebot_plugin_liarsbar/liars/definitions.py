@@ -61,6 +61,7 @@ input_store = _InputStore()
 class CallResultStatus(int, Enum):
     SUCCESS = 0
     ERROR = 1
+    WARNING = 2
 
 
 class CallResult:
@@ -77,6 +78,7 @@ class Player:
         self.uid = uid
         self.name = name
         self.in_room: "Room | None" = None
+        self.in_game: bool = False
 
         self.card = []
         self.gun = []
@@ -152,7 +154,17 @@ class Room:
 
     def on_remove_player(self, player: Player):
         self.players.remove(player)
-        return CallResult(CallResultStatus.SUCCESS, f"✔ {player} 退出房间")
+        if len(self.players) == 0:
+            self.attendable = False
+            return CallResult(CallResultStatus.WARNING, "✔ 房间人数少于1，已关闭")
+
+        if self.owener == player:
+            self.owener = self.players[0]
+
+        return CallResult(
+            CallResultStatus.SUCCESS,
+            f"✔ {player} 退出房间, 房主更换为: {self.owener.name}",
+        )
 
     def on_get_players(self):
         return CallResult(
@@ -215,6 +227,9 @@ class Game:
 
     async def start(self, num_real_bullet: int = 1):
         self.cur_player_idx = 0
+        for player in self.room.players:
+            player.card = []
+            player.in_game = True
 
         await self.load_bullets(num_real_bullet)
         await UniMessage().text(
@@ -296,6 +311,8 @@ class Game:
         await UniMessage().text(f"{self.get_alive()[0].name} 赢了！").send(
             self.room.target, self.bot
         )
+        for player in self.room.players:
+            player.in_game = False
 
     async def check_last_player_with_card(self, cur):
         zero_cards = 0

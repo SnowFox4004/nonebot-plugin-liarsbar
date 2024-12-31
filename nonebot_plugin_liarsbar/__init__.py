@@ -10,11 +10,11 @@ from .config import Config, config
 __version__ = "1.0.3"
 __plugin_meta__ = PluginMetadata(
     name="Liar's Bar",
-    usage="/createroon /startgame /fp <card> /zy /help",
-    description="Nonebot plugin for playing liar's bar",
+    usage="/createroon /startgame /fp <card> /zy /help /quitroom",
+    description="适用于 nonebot2 框架的 liar's bar 插件",
     type="application",
     config=Config,
-    homepage="https://github.com/SnowFox4004/nonebot-plugin-liarsbar",  # should be changed
+    homepage="https://github.com/SnowFox4004/nonebot-plugin-liarsbar",
     supported_adapters=inherit_supported_adapters(
         "nonebot_plugin_alconna", "nonebot_plugin_uninfo"
     ),
