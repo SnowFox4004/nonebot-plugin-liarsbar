@@ -174,7 +174,9 @@ class Room:
     def on_get_players(self):
         return CallResult(
             CallResultStatus.SUCCESS,
-            f"👀 房间内玩家：\n\t{'\n\t'.join([str(player) for player in self.players])}",
+            "👀 房间内玩家：\n\t{0}".format(
+                "\n\t".join([str(player) for player in self.players])
+            ),
         )
 
     async def on_start_game(self, event: Event, bot: Bot):
