@@ -99,7 +99,7 @@ class Player:
         return int(md5(self.uid.encode()).hexdigest(), base=16)
 
     def attend_room(self, room: "Room"):
-        if self.in_room:
+        if self.in_room is not None:
             return CallResult(
                 CallResultStatus.ERROR,
                 f"❌ {self.name} 已经在房间 {self.in_room.room_name} 中, 请先退出此房间",
@@ -376,6 +376,9 @@ class Game:
 
         await broadcast_msg.send(self.room.target, self.bot)
         await self.shoot_player(shoot_target, reason)
+
+        if self.cur_player_idx >= len(self.get_alive()):
+            self.cur_player_idx = 0
 
         return 0
         # return broadcast_msg, shoot_target, reason
