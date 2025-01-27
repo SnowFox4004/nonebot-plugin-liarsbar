@@ -131,6 +131,8 @@ class Room:
         self.attendable = True
         self.gid = gid
         self.owener = owner
+        self.gaming = False
+        self.game: asyncio.Task | None = None
 
         if room_name is None:
             self.room_name = get_random_roomname()
@@ -151,6 +153,11 @@ class Room:
 
         if player in self.players:
             return CallResult(CallResultStatus.ERROR, f"❌ {player} 已经在房间中")
+
+        if len(self.players) >= 4:
+            return CallResult(
+                CallResultStatus.ERROR, "❌ 房间人数已满，请新开房间或等待房间"
+            )
 
         self.players.append(player)
         return CallResult(CallResultStatus.SUCCESS, f"✔ {player} 加入房间")
@@ -181,6 +188,7 @@ class Room:
 
     async def on_start_game(self, event: Event, bot: Bot):
         msg = UniMessage().text("游戏开始\n")
+        # self.gaming = True
         for player in self.players:
             msg = msg.at(player.uid)
 
@@ -244,7 +252,7 @@ class Game:
         ).send()
         game_round = 0
 
-        while len(self.get_alive()) > 1:
+        while self.room.gaming and len(self.get_alive()) > 1:
             game_round += 1
 
             self.cards, cur_need = Game.generate_cards()
@@ -274,7 +282,9 @@ class Game:
                 tasks.append(asyncio.create_task(player.send(msg, self.bot)))
 
             done, pending = await asyncio.wait(tasks)
-            assert len(pending) == 0, "消息发送失败"
+            # assert len(pending) == 0, "消息发送失败"
+            logger.critical(f"发牌阶段发牌失败，可能导致游戏运行问题，请注意")
+
             tasks.clear()
 
             self.last_cards = []
@@ -341,6 +351,9 @@ class Game:
 
     async def get_player_fp(self, cur: Player, target_cards: list):
         # target_cards = map(int, action.split(" ")[1:])
+
+        target_cards = list(set(target_cards))  # 去重
+
         cards_info = [cur.card[(i - 1) % len(cur.card)] for i in target_cards]
         for _ in cards_info:
             cur.card.remove(_)
